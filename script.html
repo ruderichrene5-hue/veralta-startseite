@@ -47,6 +47,15 @@ textarea{resize:vertical;min-height:70px}
 .btn-cancel{font-size:13px;padding:7px 14px;border-radius:8px;border:0.5px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer;font-family:"DM Sans",sans-serif}
 .btn-save{font-size:13px;padding:7px 18px;border-radius:8px;border:none;background:var(--accent);color:#080c14;font-weight:500;cursor:pointer;font-family:"DM Sans",sans-serif}
 .empty{text-align:center;padding:2.5rem;color:var(--text-muted);font-size:14px}
+
+.layout{display:flex;min-height:calc(100vh - 60px)}
+.sidebar{width:180px;background:var(--surface);border-right:0.5px solid var(--border);padding:14px 0;flex-shrink:0}
+.sidebar-section{font-size:9px;color:rgba(234,230,222,0.2);text-transform:uppercase;letter-spacing:.15em;padding:14px 16px 5px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:9px 16px;font-size:12px;color:rgba(234,230,222,0.45);cursor:pointer;border-left:2px solid transparent;text-decoration:none;transition:all .15s}
+.nav-item:hover{color:var(--text);background:rgba(92,225,230,0.04)}
+.nav-item.active{color:var(--accent);border-left-color:var(--accent);background:rgba(92,225,230,0.06)}
+.nav-item i{font-size:15px;flex-shrink:0}
+.content-area{flex:1;overflow-y:auto;padding:1.5rem;min-width:0}
 </style>
 </head>
 <body>
@@ -75,7 +84,8 @@ textarea{resize:vertical;min-height:70px}
     </div>
   </div>
 </div>
-<main>
+<div class="layout"><div class="sidebar"><div class="sidebar-section">Übersicht</div><a href="dashboard" class="nav-item "><i class="ti ti-layout-dashboard"></i> Dashboard</a><div class="sidebar-section">Models</div><a href="contentplan" class="nav-item "><i class="ti ti-calendar"></i> Contentplan</a><a href="steckbrief" class="nav-item "><i class="ti ti-id-badge"></i> Steckbrief</a><a href="zugangsdaten" class="nav-item "><i class="ti ti-lock"></i> Zugangsdaten</a><div class="sidebar-section">Agency</div><a href="script" class="nav-item active"><i class="ti ti-script"></i> Script</a><a href="onboarding" class="nav-item "><i class="ti ti-checklist"></i> Onboarding</a></div><div class="content-area">
+    <a href="dashboard" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--text-muted);text-decoration:none;margin-bottom:1.25rem;transition:color .15s" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text-muted)'"><i class="ti ti-arrow-left" style="font-size:14px"></i> Zurück zum Dashboard</a><main>
   <div class="page-title">Script & Stage</div>
   <div class="page-sub">Sexting-Pakete & Preisliste</div>
   <div class="info-box">Hier siehst du was in jeder Stage zu zeigen ist. CEO kann Stages bearbeiten.</div>
@@ -86,7 +96,7 @@ textarea{resize:vertical;min-height:70px}
       <tbody id="stage-tbody"><tr><td colspan="6" class="empty">Lädt...</td></tr></tbody>
     </table>
   </div>
-</main>
+</main></div></div>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
@@ -118,14 +128,14 @@ const DEFAULT=[
   {n:11,price:0,imgs:0,vids:1,len:'15 Sek.',bez:'Aftercare',imgdesc:'',viddesc:'Dankesnachricht senden, Wiederkommen einladen'},
 ];
 
-document.getElementById('logout-btn').onclick=()=>signOut(auth).then(()=>window.location.href='login.html');
+document.getElementById('logout-btn').onclick=()=>signOut(auth).then(()=>window.location.href='login');
 document.getElementById('add-btn').onclick=()=>openModal();
 document.getElementById('cancel-btn').onclick=()=>closeModal();
 document.getElementById('modal-bg').addEventListener('click',e=>{if(e.target===document.getElementById('modal-bg'))closeModal();});
 document.getElementById('save-btn').onclick=saveStage;
 
 onAuthStateChanged(auth,async(user)=>{
-  if(!user){window.location.href='login.html';return;}
+  if(!user){window.location.href='login';return;}
   const snap=await getDoc(doc(db,'profiles',user.uid));
   const profile=snap.data();
   document.getElementById('nav-name').textContent=profile?.name||'';
