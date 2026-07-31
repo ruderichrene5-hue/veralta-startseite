@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contentplan - Bulk Import</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #080c14;
+    --accent: #5CE1E6;
+    --text: #e8e4dc;
+    --text-muted: #a8a39f;
+    --border: #1a1f2e;
+    --success: #4ade80;
+    --danger: #ef4444;
+  }
+  
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    padding: 20px;
+  }
+  
+  .container { max-width: 1200px; margin: 0 auto; }
+  
+  h1 { margin-bottom: 30px; font-size: 28px; }
+  
+  .tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 30px;
+    border-bottom: 1px solid var(--border);
+  }
+  
+  .tab-btn {
+    padding: 12px 20px;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    border-bottom: 2px solid transparent;
+    transition: all 0.3s;
+  }
+  
+  .tab-btn.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+  
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+  
+  /* CSV Upload Tab */
+  .upload-box {
+    border: 2px dashed var(--border);
+    border-radius: 8px;
+    padding: 40px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  
+  .upload-box:hover {
+    border-color: var(--accent);
+    background: rgba(92, 225, 230, 0.05);
+  }
+  
+  .upload-box.drag-over {
+    border-color: var(--accent);
+    background: rgba(92, 225, 230, 0.1);
+  }
+  
+  .upload-box input[type="file"] { display: none; }
+  
+  .upload-text { margin-bottom: 15px; font-size: 14px; color: var(--text-muted); }
+  
+  .upload-btn {
+    padding: 10px 20px;
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+  }
+  
+  .upload-btn:hover { opacity: 0.9; }
+  
+  .csv-template {
+    margin-top: 30px;
+    padding: 20px;
+    background: rgba(92, 225, 230, 0.05);
+    border-radius: 6px;
+    border: 1px solid var(--border);
+  }
+  
+  .csv-template h3 { margin-bottom: 10px; color: var(--accent); font-size: 14px; }
+  
+  .csv-template code {
+    display: block;
+    background: var(--bg);
+    padding: 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    overflow-x: auto;
+    margin: 10px 0;
+    color: var(--text-muted);
+  }
+  
+  /* Table Tab */
+  .table-wrapper {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  th {
+    background: rgba(92, 225, 230, 0.1);
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 13px;
+    border-bottom: 1px solid var(--border);
+    color: var(--accent);
+  }
+  
+  td {
+    padding: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  
+  tr:hover { background: rgba(92, 225, 230, 0.05); }
+  
+  input[type="text"],
+  input[type="date"],
+  select {
+    width: 100%;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 13px;
+  }
+  
+  input[type="text"]:focus,
+  input[type="date"]:focus,
+  select:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: rgba(92, 225, 230, 0.1);
+  }
+  
+  .btn-delete {
+    padding: 6px 12px;
+    background: var(--danger);
+    border: none;
+    border-radius: 4px;
+    color: white;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  
+  .btn-delete:hover { opacity: 0.9; }
+  
+  .btn-add-row {
+    padding: 10px 20px;
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    margin-top: 15px;
+  }
+  
+  .btn-add-row:hover { opacity: 0.9; }
+  
+  .actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 30px;
+  }
+  
+  .btn-import {
+    padding: 12px 30px;
+    background: var(--success);
+    color: var(--bg);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+  }
+  
+  .btn-import:hover { opacity: 0.9; }
+  
+  .btn-cancel {
+    padding: 12px 30px;
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+  }
+  
+  .btn-cancel:hover { border-color: var(--text); }
+  
+  .status-msg {
+    margin-top: 20px;
+    padding: 15px;
+    border-radius: 6px;
+    display: none;
+  }
+  
+  .status-msg.success {
+    background: rgba(74, 222, 128, 0.15);
+    border: 1px solid var(--success);
+    color: var(--success);
+  }
+  
+  .status-msg.error {
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid var(--danger);
+    color: var(--danger);
+  }
+  
+  .logo {
+    width: 100%;
+    max-width: 300px;
+    margin-bottom: 30px;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA..." class="logo" alt="Veralta">
+  
+  <h1>📋 Contentplan Bulk Import</h1>
+  
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('csv')">📤 CSV Upload</button>
+    <button class="tab-btn" onclick="switchTab('table')">📝 Inline Tabelle</button>
+  </div>
+  
+  <!-- CSV Upload Tab -->
+  <div id="csv" class="tab-content active">
+    <div class="upload-box" id="upload-box">
+      <div class="upload-text">Ziehe eine CSV-Datei hier rein oder klicke zum Auswählen</div>
+      <button class="upload-btn">CSV Datei wählen</button>
+      <input type="file" id="csv-file" accept=".csv" />
+    </div>
+    
+    <div class="csv-template">
+      <h3>📋 CSV Format Vorlage:</h3>
+      <code>Datum,Typ,Plattform,Models,ReferenceLink,PostLink,Notiz
+2026-08-01,Reel,Instagram,Cindy;Wilson,https://...,https://...,Spontan
+2026-08-02,Story,Instagram,Cindy,https://...,https://...,Geplant
+2026-08-03,Reel,Instagram,Test Model,,https://...,Mit Effekten</code>
+      <p style="margin-top: 10px; font-size: 12px; color: var(--text-muted);">
+        <strong>Models trennen mit Semikolon (;)</strong> — z.B. "Cindy;Wilson;Test Model"<br>
+        <strong>Datum Format:</strong> YYYY-MM-DD<br>
+        <strong>Typ:</strong> Reel, Story, Post, Shorts, etc.<br>
+        <strong>Plattform:</strong> Instagram, TikTok, YouTube, etc.
+      </p>
+    </div>
+    
+    <div id="status" class="status-msg"></div>
+  </div>
+  
+  <!-- Inline Table Tab -->
+  <div id="table" class="tab-content">
+    <div class="table-wrapper">
+      <table id="bulk-table">
+        <thead>
+          <tr>
+            <th style="width: 120px;">Datum</th>
+            <th style="width: 100px;">Typ</th>
+            <th style="width: 120px;">Plattform</th>
+            <th style="width: 200px;">Models (;-getrennt)</th>
+            <th style="width: 150px;">Reference Link</th>
+            <th style="width: 150px;">Post Link</th>
+            <th style="width: 150px;">Notiz</th>
+            <th style="width: 60px;">Aktion</th>
+          </tr>
+        </thead>
+        <tbody id="table-body">
+          <tr>
+            <td><input type="date" value="2026-08-01"></td>
+            <td><input type="text" value="Reel" placeholder="Reel"></td>
+            <td><input type="text" value="Instagram" placeholder="Instagram"></td>
+            <td><input type="text" placeholder="Cindy;Wilson"></td>
+            <td><input type="text" placeholder="https://..."></td>
+            <td><input type="text" placeholder="https://..."></td>
+            <td><input type="text" placeholder="Notiz"></td>
+            <td><button class="btn-delete" onclick="deleteRow(this)">🗑️</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <button class="btn-add-row" onclick="addRow()">+ Zeile hinzufügen</button>
+  </div>
+  
+  <!-- Actions -->
+  <div class="actions">
+    <button class="btn-import" onclick="importData()">✓ Importieren</button>
+    <button class="btn-cancel" onclick="window.location.href='contentplan.html'">← Zurück</button>
+  </div>
+  
+  <div id="import-status" class="status-msg"></div>
+</div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js';
+import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js';
+import { getFirestore, collection, getDocs, addDoc } from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: 'AIzaSyDvYCYMYN5e6eLpIqzPAKp7YXV72jdpO4w',
+  authDomain: 'veralta.firebaseapp.com',
+  projectId: 'veralta',
+  appId: '1:41250118519:web:b7dbda9bba16a73aef1f72'
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+let models = [];
+let currentUser = null;
+
+// Auth Check
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    window.location.href = 'login';
+    return;
+  }
+  currentUser = user;
+  await loadModels();
+});
+
+async function loadModels() {
+  const snap = await getDocs(collection(db, 'profiles'));
+  models = snap.docs
+    .filter(d => d.data().role === 'model')
+    .map(d => ({ id: d.id, name: d.data().name }));
+}
+
+// Tab Switching
+window.switchTab = (tab) => {
+  document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(e => e.classList.remove('active'));
+  document.getElementById(tab).classList.add('active');
+  event.target.classList.add('active');
+};
+
+// CSV Upload
+const uploadBox = document.getElementById('upload-box');
+const csvFile = document.getElementById('csv-file');
+
+uploadBox.addEventListener('click', () => csvFile.click());
+uploadBox.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  uploadBox.classList.add('drag-over');
+});
+uploadBox.addEventListener('dragleave', () => uploadBox.classList.remove('drag-over'));
+uploadBox.addEventListener('drop', (e) => {
+  e.preventDefault();
+  uploadBox.classList.remove('drag-over');
+  if (e.dataTransfer.files[0]) csvFile.files = e.dataTransfer.files;
+});
+
+csvFile.addEventListener('change', () => {
+  const file = csvFile.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = (e) => parseCSV(e.target.result);
+    reader.readAsText(file);
+  }
+});
+
+function parseCSV(csv) {
+  const lines = csv.trim().split('\n');
+  if (lines.length < 2) {
+    showStatus('Ungültige CSV: Mindestens 1 Datenzeile erforderlich', 'error');
+    return;
+  }
+  
+  const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+  const data = [];
+  
+  for (let i = 1; i < lines.length; i++) {
+    const values = lines[i].split(',').map(v => v.trim());
+    if (values.length < 4) continue;
+    
+    data.push({
+      datum: values[headers.indexOf('datum')] || '',
+      typ: values[headers.indexOf('typ')] || '',
+      plattform: values[headers.indexOf('plattform')] || '',
+      models: values[headers.indexOf('models')] || '',
+      refLink: values[headers.indexOf('referencelink')] || '',
+      postLink: values[headers.indexOf('postlink')] || '',
+      notiz: values[headers.indexOf('notiz')] || ''
+    });
+  }
+  
+  populateTable(data);
+  switchTab('table');
+}
+
+function populateTable(data) {
+  const tbody = document.getElementById('table-body');
+  tbody.innerHTML = '';
+  
+  data.forEach(row => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="date" value="${row.datum}"></td>
+      <td><input type="text" value="${row.typ}"></td>
+      <td><input type="text" value="${row.plattform}"></td>
+      <td><input type="text" value="${row.models}" placeholder="Cindy;Wilson"></td>
+      <td><input type="text" value="${row.refLink}"></td>
+      <td><input type="text" value="${row.postLink}"></td>
+      <td><input type="text" value="${row.notiz}"></td>
+      <td><button class="btn-delete" onclick="deleteRow(this)">🗑️</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// Table Management
+window.addRow = () => {
+  const tbody = document.getElementById('table-body');
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><input type="date"></td>
+    <td><input type="text" placeholder="Reel"></td>
+    <td><input type="text" placeholder="Instagram"></td>
+    <td><input type="text" placeholder="Cindy;Wilson"></td>
+    <td><input type="text" placeholder="https://..."></td>
+    <td><input type="text" placeholder="https://..."></td>
+    <td><input type="text" placeholder="Notiz"></td>
+    <td><button class="btn-delete" onclick="deleteRow(this)">🗑️</button></td>
+  `;
+  tbody.appendChild(tr);
+};
+
+window.deleteRow = (btn) => {
+  btn.closest('tr').remove();
+};
+
+// Import
+window.importData = async () => {
+  const rows = document.querySelectorAll('#table-body tr');
+  if (rows.length === 0) {
+    showImportStatus('Keine Daten zum Importieren', 'error');
+    return;
+  }
+  
+  let imported = 0;
+  let errors = [];
+  
+  for (const row of rows) {
+    try {
+      const inputs = row.querySelectorAll('input');
+      const datum = inputs[0].value;
+      const typ = inputs[1].value;
+      const plattform = inputs[2].value;
+      const modelNames = inputs[3].value;
+      const refLink = inputs[4].value || null;
+      const postLink = inputs[5].value || null;
+      const notiz = inputs[6].value || null;
+      
+      if (!datum || !typ || !plattform || !modelNames) {
+        errors.push(`Zeile übersprungen: Pflichtfelder fehlen`);
+        continue;
+      }
+      
+      // Parse model names
+      const selectedModelNames = modelNames.split(';').map(m => m.trim()).filter(m => m);
+      const selectedModelIds = models
+        .filter(m => selectedModelNames.some(n => m.name.toLowerCase().includes(n.toLowerCase())))
+        .map(m => m.id);
+      
+      if (selectedModelIds.length === 0) {
+        errors.push(`Zeile übersprungen: Keine Models gefunden für "${modelNames}"`);
+        continue;
+      }
+      
+      // Create task
+      const task = {
+        date: datum,
+        type: typ,
+        platform: plattform,
+        assignedModels: selectedModelIds,
+        refLink: refLink,
+        postLink: postLink,
+        note: notiz,
+        status: 'Zu drehen',
+        createdBy: currentUser.uid
+      };
+      
+      await addDoc(collection(db, 'tasks'), task);
+      imported++;
+    } catch (err) {
+      errors.push(`Fehler: ${err.message}`);
+    }
+  }
+  
+  let msg = `✅ ${imported} Aufgaben importiert`;
+  if (errors.length > 0) {
+    msg += `\n⚠️ ${errors.length} Fehler:\n${errors.join('\n')}`;
+  }
+  
+  showImportStatus(msg, errors.length > 0 ? 'error' : 'success');
+  
+  if (imported > 0) {
+    setTimeout(() => window.location.href = 'contentplan.html', 1500);
+  }
+};
+
+function showStatus(msg, type) {
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.className = `status-msg ${type}`;
+  el.style.display = 'block';
+}
+
+function showImportStatus(msg, type) {
+  const el = document.getElementById('import-status');
+  el.textContent = msg;
+  el.className = `status-msg ${type}`;
+  el.style.display = 'block';
+}
+</script>
+
+</body>
+</html>
